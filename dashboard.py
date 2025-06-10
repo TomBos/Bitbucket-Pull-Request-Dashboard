@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 
 from dotenv import load_dotenv
-from requests.auth import HTTPBasicAuth
 
 import os
 import requests
@@ -24,7 +23,7 @@ def cache_pull_requests():
 
         response = requests.get(
             endpoint,
-            auth=HTTPBasicAuth(user, auth_v2),
+            auth=(user, auth_v2),
             headers={"Accept": "application/json"},
             params={"pagelen": 50}
         )
