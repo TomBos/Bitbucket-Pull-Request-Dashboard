@@ -1,34 +1,26 @@
 #!/usr/bin/env python
 
 from request_controller import requestController as rc
-from credential_controller import credentialController as cc
+from dotenv import load_dotenv
 
 import os
 import json
 import sys
 
-credentials = cc()
 keys = ["API_KEY", "API_USER", "ORGANIZATION", "PROJECT"]
 base_url = "https://api.bitbucket.org/2.0"
 
+load_dotenv() 
 
 for key in keys:
-    if not credentials.get_var_value(key):
-        raise ValueError("Missing required environment variables")
+    if not os.getenv(key): 
+        raise ValueError(f"Missing required environment variable {key}")
 
+org = os.getenv("ORGANIZATION")
+project = os.getenv("PROJECT")
+user = os.getenv("API_USER")
+api_key = os.getenv("API_KEY")
 
-def cache_pull_requests():
-        endpoint = f"{base_url}/repositories/{credentials.get_var_value("ORGANIZATION")}/{credentials.get_var_value("PROJECT")}/pullrequests"
-        request_controller = rc(credentials.get_var_value("API_USER"), credentials.get_var_value("API_KEY"))
-        parsed_response = request_controller.call_endpoint(endpoint)
-
-        data = parsed_response["values"]
-
-        with open("pullrequests.json", "w") as f:
-            json.dump(data, f, indent=2)
-
-        print("Saved to pullrequests.json")
-        return 1
 
 
 def load_pull_requests():
@@ -38,7 +30,7 @@ def load_pull_requests():
     # Check if cache file exists
     if not os.path.exists(cache_file):
         print("Cache file not found, fetching pull requests...")
-        if cache_pull_requests() != 1:
+        if cache_master_file() != 1:
             raise RuntimeError("Failed to fetch pull requests")
     
     # Load and return the cached data
@@ -50,7 +42,7 @@ def load_pull_requests():
         print(f"Error loading cache: {e}")
         # Attempt to refresh cache if corrupted
         print("Attempting to refresh cache...")
-        if cache_pull_requests() != 1:
+        if cache_master_file() != 1:
             raise RuntimeError("Failed to refresh pull requests cache")
         with open(cache_file, "r") as f:
             return json.load(f)

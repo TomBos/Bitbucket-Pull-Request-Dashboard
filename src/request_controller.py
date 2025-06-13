@@ -10,11 +10,11 @@ class requestController:
         pass
 
 
-    def call_endpoint(endpoint, username, password):
+    def call_endpoint(self, endpoint):
         try: 
             response = requests.get(
                 endpoint,
-                auth=(username, password),
+                auth=(self.username, self.api_key),
                 headers={"Accept": "application/json"},
                 params={"pagelen": 50}
             )
