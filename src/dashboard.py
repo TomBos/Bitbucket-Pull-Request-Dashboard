@@ -1,35 +1,27 @@
 #!/usr/bin/env python
 
-from dotenv import load_dotenv
+from request_controller import requestController as rc
+from credential_controller import credentialController as cc
 
 import os
-import requests
 import json
 import sys
 
+credentials = cc()
+keys = ["API_KEY", "API_USER", "ORGANIZATION", "PROJECT"]
+base_url = "https://api.bitbucket.org/2.0"
+
+
+for key in keys:
+    if not credentials.get_var_value(key):
+        raise ValueError("Missing required environment variables")
+
+
 def cache_pull_requests():
-    try:
-        load_dotenv()
-        auth_v2 = os.getenv("API_KEY")
-        user = os.getenv("API_USER")
-        organization = os.getenv("ORGANIZATION")
-        project = os.getenv("PROJECT")
+        endpoint = f"{base_url}/repositories/{credentials.get_var_value("ORGANIZATION")}/{credentials.get_var_value("PROJECT")}/pullrequests"
+        request_controller = rc(credentials.get_var_value("API_USER"), credentials.get_var_value("API_KEY"))
+        parsed_response = request_controller.call_endpoint(endpoint)
 
-        if not all([auth_v2, user, organization, project]):
-            raise ValueError("Missing required environment variables")
-
-        base_url = "https://api.bitbucket.org/2.0"
-        endpoint = f"{base_url}/repositories/{organization}/{project}/pullrequests"
-
-        response = requests.get(
-            endpoint,
-            auth=(user, auth_v2),
-            headers={"Accept": "application/json"},
-            params={"pagelen": 50}
-        )
-
-        response.raise_for_status()
-        parsed_response = response.json()
         data = parsed_response["values"]
 
         with open("pullrequests.json", "w") as f:
@@ -38,12 +30,6 @@ def cache_pull_requests():
         print("Saved to pullrequests.json")
         return 1
 
-    except requests.exceptions.RequestException as e:
-        print(f"API request failed: {e}")
-        return 0
-    except (ValueError, IOError, json.JSONDecodeError) as e:
-        print(f"Processing error: {e}")
-        return 0
 
 def load_pull_requests():
     """Load pull requests from cache or fetch if cache doesn't exist"""
