@@ -1,58 +1,5 @@
 #!/usr/bin/env python
 
-from request_controller import requestController as rc
-from cache_manager import cacheManager as cm
-from dotenv import load_dotenv
-
-import os
-import json
-import sys
-import time
-import datetime
-
-keys = ["API_KEY", "API_USER", "ORGANIZATION", "PROJECT"]
-APPROVAL_THRESHOLD = 2
-
-load_dotenv() 
-
-for key in keys:
-    if not os.getenv(key): 
-        raise ValueError(f"Missing required environment variable {key}")
-
-org = os.getenv("ORGANIZATION")
-project = os.getenv("PROJECT")
-user = os.getenv("API_USER")
-api_key = os.getenv("API_KEY")
-
-file_path =  "cache/pr_overview.json"
-can_recache = True
-
-if os.path.exists(file_path):
-    mod_time = os.path.getmtime(file_path) 
-    can_recache = mod_time < (time.time() - 3600) 
-
-if can_recache:
-    cache = cm() 
-    cache.clear_old_pull_requests("cache/") 
-    
-    req = rc(user,api_key)
-    endpoint = req.build_url(["repositories",org,project,"pullrequests"])
-    res = req.get(endpoint)
-
-    cache.save_json_cache(res,file_path)
-
-    pull_requests = res["values"]
-    for pr in pull_requests:
-        endpoint = req.build_url(["repositories",org,project,"pullrequests",pr["id"]])
-        res = req.get(endpoint)
-        if not res["draft"]:
-            if not cache.passes_reviews(res, APPROVAL_THRESHOLD): 
-                file_path = f"cache/{pr["id"]}.pr.json"
-                cache.save_json_cache(res,file_path)
-
-
-sys.exit(0)
-
 """
 def load_pull_requests():
     cache_file = "pullrequests.json"
@@ -109,6 +56,3 @@ def get_single_pull_request(pullrequest_id):
 
 
 sys.exit(1)
-
-for pr in pull_requests_data:
-    print(f"- #{pr['id']}: {pr['title']} (state: {pr['state']})")

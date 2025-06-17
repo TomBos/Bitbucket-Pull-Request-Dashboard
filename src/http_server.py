@@ -61,3 +61,14 @@ class ServerController(BaseHTTPRequestHandler):
                             file_path = f"{CACHE_DIR}/{pr["id"]}.pr.json"
                             cache.save_json_cache(res,file_path)
 
+
+
+
+def run(server_class=HTTPServer, handler_class=ServerController, port=8000):
+    server_address = ('', port)
+    httpd = server_class(server_address, handler_class)
+    print(f"Server running on port {port}")
+    httpd.serve_forever()
+
+
+run()
