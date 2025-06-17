@@ -7,6 +7,8 @@ from dotenv import load_dotenv
 import os
 import json
 import sys
+import time
+import datetime
 
 keys = ["API_KEY", "API_USER", "ORGANIZATION", "PROJECT"]
 
@@ -21,14 +23,48 @@ project = os.getenv("PROJECT")
 user = os.getenv("API_USER")
 api_key = os.getenv("API_KEY")
 
-req = rc(user,api_key)
-endpoint = req.build_url(["repositories",org,project,"pullrequests"])
-res = req.get(endpoint)
+file_path =  "cache/pr_overview.json"
+can_recache = True
 
-cache = cm()
-was_recached = cache.save_json_cache(res)
-print(was_recached)
+if os.path.exists(file_path):
+    mod_time = os.path.getmtime(file_path) 
+    can_recache = mod_time < (time.time() - 3600) 
 
+if can_recache:
+    req = rc(user,api_key)
+    endpoint = req.build_url(["repositories",org,project,"pullrequests"])
+    res = req.get(endpoint)
+
+    cache = cm()
+    cache.save_json_cache(res,file_path)
+
+    pull_requests = res["values"]
+    for pr in pull_requests:
+        endpoint = req.build_url(["repositories",org,project,"pullrequests",pr["id"]])
+        res = req.get(endpoint)
+        if not res["draft"]:
+            file_path = f"cache/{pr["id"]}.pr.json"
+            cache.save_json_cache(res,file_path)
+
+
+data = None
+with open("cache/6888.pr.json", "r") as f:
+    data = json.load(f)
+
+
+author = data["author"]["display_name"]
+participants = data["participants"]
+approved_count = 0
+
+print(f"Autor: {author}")
+
+for participant in participants:
+    if participant["user"]["display_name"] != author:
+        if participant["approved"]:
+            approved_count += 1
+        print(f"Participant: {participant["user"]["display_name"]}")
+
+print(f"Approved: {approved_count}")
 
 sys.exit(0)
 
