@@ -11,6 +11,7 @@ import time
 import datetime
 
 keys = ["API_KEY", "API_USER", "ORGANIZATION", "PROJECT"]
+APPROVAL_THRESHOLD = 2
 
 load_dotenv() 
 
@@ -31,11 +32,13 @@ if os.path.exists(file_path):
     can_recache = mod_time < (time.time() - 3600) 
 
 if can_recache:
+    cache = cm() 
+    cache.clear_old_pull_requests("cache/") 
+    
     req = rc(user,api_key)
     endpoint = req.build_url(["repositories",org,project,"pullrequests"])
     res = req.get(endpoint)
 
-    cache = cm()
     cache.save_json_cache(res,file_path)
 
     pull_requests = res["values"]
@@ -43,28 +46,10 @@ if can_recache:
         endpoint = req.build_url(["repositories",org,project,"pullrequests",pr["id"]])
         res = req.get(endpoint)
         if not res["draft"]:
-            file_path = f"cache/{pr["id"]}.pr.json"
-            cache.save_json_cache(res,file_path)
+            if not cache.passes_reviews(res, APPROVAL_THRESHOLD): 
+                file_path = f"cache/{pr["id"]}.pr.json"
+                cache.save_json_cache(res,file_path)
 
-
-data = None
-with open("cache/6888.pr.json", "r") as f:
-    data = json.load(f)
-
-
-author = data["author"]["display_name"]
-participants = data["participants"]
-approved_count = 0
-
-print(f"Autor: {author}")
-
-for participant in participants:
-    if participant["user"]["display_name"] != author:
-        if participant["approved"]:
-            approved_count += 1
-        print(f"Participant: {participant["user"]["display_name"]}")
-
-print(f"Approved: {approved_count}")
 
 sys.exit(0)
 
