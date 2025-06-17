@@ -9,8 +9,14 @@ class requestController:
         self.api_key = api_key
         pass
 
+    def build_url(self, params = []):
+        endpoint = "https://api.bitbucket.org/2.0" 
+        for param in params:
+            endpoint += f"/{param}"
+        return endpoint
 
-    def call_endpoint(self, endpoint):
+
+    def get(self, endpoint):
         try: 
             response = requests.get(
                 endpoint,

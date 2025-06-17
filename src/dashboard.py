@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 from request_controller import requestController as rc
+from cache_manager import cacheManager as cm
 from dotenv import load_dotenv
 
 import os
@@ -8,7 +9,6 @@ import json
 import sys
 
 keys = ["API_KEY", "API_USER", "ORGANIZATION", "PROJECT"]
-base_url = "https://api.bitbucket.org/2.0"
 
 load_dotenv() 
 
@@ -21,10 +21,19 @@ project = os.getenv("PROJECT")
 user = os.getenv("API_USER")
 api_key = os.getenv("API_KEY")
 
+req = rc(user,api_key)
+endpoint = req.build_url(["repositories",org,project,"pullrequests"])
+res = req.get(endpoint)
+
+cache = cm()
+was_recached = cache.save_json_cache(res)
+print(was_recached)
 
 
+sys.exit(0)
+
+"""
 def load_pull_requests():
-    """Load pull requests from cache or fetch if cache doesn't exist"""
     cache_file = "pullrequests.json"
     
     # Check if cache file exists
@@ -53,12 +62,13 @@ def get_single_pull_request(pullrequest_id):
     
     
     return
+"""
 
 # Load pull requests data
-pull_requests_data = load_pull_requests()
+# pull_requests_data = load_pull_requests()
 # print(f"Successfully loaded {len(pull_requests_data)} pull requests from cache")
 # print(f"Found {len(pull_requests_data)} pull requests:")
-y = json.dumps(pull_requests_data[1])
+# y = json.dumps(pull_requests_data[1])
 # print(y)
 
 # List of what i need:
@@ -72,8 +82,8 @@ y = json.dumps(pull_requests_data[1])
 
 
 # using ID's then fetch each PR into file if it is not already cached and it havent been 1h since last upload
-for pr in pull_requests_data:
-    get_single_pull_request(pr["id"])
+# for pr in pull_requests_data:
+#       get_single_pull_request(pr["id"])
 
 
 
