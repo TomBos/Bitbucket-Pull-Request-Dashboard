@@ -61,6 +61,9 @@ class ServerController(BaseHTTPRequestHandler):
                             file_path = f"{CACHE_DIR}/{pr["id"]}.pr.json"
                             cache.save_json_cache(res,file_path)
 
+        if self.path == "/server-content":
+           return 
+
 
 
 
@@ -71,4 +74,40 @@ def run(server_class=HTTPServer, handler_class=ServerController, port=8000):
     httpd.serve_forever()
 
 
-run()
+# run() 
+
+cache = cm()
+data = cache.load_cache(f"{CACHE_DIR}/6882.pr.json")
+data.pop("links", None)
+if "summary" in data and isinstance(data["summary"], dict):
+    html_content = data["summary"].get("html")
+    data["summary"] = {"html": html_content} if html_content else {}
+
+if "participants" in data and isinstance(data["participants"], list):
+    data["participants"] = [
+        {
+            "display_name": p.get("user", {}).get("display_name"),
+            "approved": p.get("approved"),
+            "avatar": p.get("user", {}).get("links", {}).get("avatar", {}).get("href", "")
+        }
+        for p in data["participants"]
+    ]
+
+if "reviewers" in data and isinstance(data["reviewers"], list):
+    data["reviewers"] = [
+        {
+            "display_name": r.get("display_name",{}),
+            "avatar": r.get("links", {}).get("avatar", {}).get("href", "") 
+        }
+        for r in data["reviewers"]
+    ]
+
+
+cache.save_json_cache(data,f"{CACHE_DIR}/Testing.pr.json")
+
+
+print(json.dumps(data, indent=4))
+
+
+
+
