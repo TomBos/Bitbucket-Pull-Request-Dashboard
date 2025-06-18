@@ -51,15 +51,12 @@ class ServerController(BaseHTTPRequestHandler):
             cache.clear_pr_cache(CACHE_DIR) 
     
             req = RequestController(config["API_USER"], config["API_KEY"])
-            base_endpoint = req.build_url([
-                "repositories",
-                config["ORGANIZATION"],
-                config["PROJECT"],
-                "pullrequests"
-            ]) 
+            base_endpoint = req.build_url("repositories",config["ORGANIZATION"],config["PROJECT"],"pullrequests")
             
             try:
                 overview_response = req.get(base_endpoint)
+                if not overview_response:
+                    return
             except Exception as e:
                 print(f"Failed to fetch pull requests overview: {e}")
                 return
@@ -71,8 +68,8 @@ class ServerController(BaseHTTPRequestHandler):
                     continue
 
                 pr_id = pr.get("id")
-                pr_endpoint =  base_endpoint + str(pr_id)
-
+                pr_endpoint = req.build_url("repositories",config["ORGANIZATION"],config["PROJECT"],"pullrequests", str(pr_id))
+                
                 try:
                     pr_details = req.get(pr_endpoint)
                 except Exception as e:

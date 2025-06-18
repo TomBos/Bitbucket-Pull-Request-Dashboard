@@ -25,7 +25,7 @@ class CacheManager:
     def clear_pr_cache(self, dir_path: str) -> None:
         if os.path.isdir(dir_path):
             for file in glob.glob(os.path.join(dir_path, "*.json")):
-                self.remove_cached_file(file)
+                self.delete_cache(file)
 
     def has_enough_approvals(self, pr_data: dict, approval_threshold: int) -> bool:
         author = pr_data["author"]["display_name"]
