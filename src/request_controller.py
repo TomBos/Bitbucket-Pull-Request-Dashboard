@@ -3,7 +3,7 @@
 import requests
 import json
 
-class requestController:
+class RequestController:
     def __init__(self, username, api_key):
         self.username = username
         self.api_key = api_key
