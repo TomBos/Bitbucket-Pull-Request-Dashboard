@@ -77,16 +77,15 @@ class ServerController(BaseHTTPRequestHandler):
                     continue
 
                 if not cache.has_enough_approvals(pr_details, APPROVAL_THRESHOLD):
+                    parsed_data = cache.trim_cache_object(pr_details)
                     pr_cache_path = os.path.join(CACHE_DIR, f"{pr_id}.pr.json")
-                    cache.save_cache(pr_details, pr_cache_path)
+                    cache.save_cache(parsed_data, pr_cache_path)
 
 
 
 
         if self.path == "/server-content":
            return 
-
-
 
 
 def run(server_class=HTTPServer, handler_class=ServerController, port=8000):
@@ -97,51 +96,3 @@ def run(server_class=HTTPServer, handler_class=ServerController, port=8000):
 
 
 run()
-
-"""
-cache = cm()
-data = cache.load_cache(f"{CACHE_DIR}/6882.pr.json")
-data.pop("links", None)
-if "summary" in data and isinstance(data["summary"], dict):
-    html_content = data["summary"].get("html")
-    data["summary"] = {"html": html_content} if html_content else {}
-
-if "participants" in data and isinstance(data["participants"], list):
-    data["participants"] = [
-        {
-            "display_name": p.get("user", {}).get("display_name"),
-            "approved": p.get("approved"),
-            "avatar": p.get("user", {}).get("links", {}).get("avatar", {}).get("href", "")
-        }
-        for p in data["participants"]
-    ]
-
-if "reviewers" in data and isinstance(data["reviewers"], list):
-    data["reviewers"] = [
-        {
-            "display_name": r.get("display_name",{}),
-            "avatar": r.get("links", {}).get("avatar", {}).get("href", "") 
-        }
-        for r in data["reviewers"]
-    ]
-
-data.pop("destination", None)
-data.pop("source", None)
-data.pop("reason", None)
-data.pop("type", None)
-data.pop("rendered", None)
-data.pop("state", None)
-data.pop("draft", None)
-data.pop("merge_commit", None)
-data.pop("closed_by", None)
-data.pop("close_source_branch", None)
-data["author"] = data["author"]["display_name"]
-
-
-cache.save_json_cache(data,f"{CACHE_DIR}/Testing.pr.json")
-
-
-print(json.dumps(data, indent=4))
-"""
-
-
