@@ -1,63 +1,41 @@
 #!/usr/bin/env python
 
 import os
-import json
 import glob
+import json
+from typing import Any, Optional
 
-class cacheManager():
-    def __init__(self):
-        pass
-
-    def save_json_cache(self, data, file_path):
-        with open(file_path, 'w') as f:
+class CacheManager:
+    def save_cache(self, data: Any, file_path: str) -> None:
+        with open(file_path, 'w', encoding='utf-8') as f:
             json.dump(data, f, indent=4, ensure_ascii=False)
 
-    def remove_cached_file(self, file_path):
-        if os.path.exists(file_path): 
+    def delete_cache(self, file_path: str) -> None:
+        try:
             os.remove(file_path)
+        except FileNotFoundError:
+            pass
 
-    def load_cache(self, file_path):
-        if os.path.exists(file_path):
-            with open(file_path, "r") as f:
+    def load_cache(self, file_path: str) -> Optional[Any]:
+        if os.path.isfile(file_path):
+            with open(file_path, 'r', encoding='utf-8') as f:
                 return json.load(f)
+        return None
 
-    def clear_old_pull_requests(self, dir_path):
+    def clear_pr_cache(self, dir_path: str) -> None:
         if os.path.isdir(dir_path):
             for file in glob.glob(os.path.join(dir_path, "*.json")):
                 self.remove_cached_file(file)
 
-    def passes_reviews(self, pr_data, approval_threshold):
+    def has_enough_approvals(self, pr_data: dict, approval_threshold: int) -> bool:
         author = pr_data["author"]["display_name"]
-        participants = pr_data["participants"]
-        approved_count = 0
+        participants = pr_data.get("participants", [])
+        approved_count = sum(
+            1 for p in participants 
+            if p["user"]["display_name"] != author and p.get("approved")
+        )
+        return approved_count >= approval_threshold
 
-        for participant in participants:
-            if participant["user"]["display_name"] != author:
-                if participant["approved"]:
-                    approved_count += 1
-
-        if approved_count >= approval_threshold:
-            return 1
-        else:
-            return 0
-
-
-    # Delete Later ?
-    """
-    def test(self):
-        for file in glob.glob(os.path.join("cache/", "*.pr.json")):
-            pr_data = self.load_cache(file)
-            author = pr_data["author"]["display_name"]
-            participants = pr_data["participants"]
-            approved_count = 0
-
-            for participant in participants:
-                if participant["user"]["display_name"] != author:
-                    if participant["approved"]:
-                        approved_count += 1
-
-            print(f"PR: {pr_data["title"]} has {approved_count} approves")
-    """
 
 
 

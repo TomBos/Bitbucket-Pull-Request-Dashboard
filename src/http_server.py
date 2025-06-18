@@ -44,22 +44,22 @@ class ServerController(BaseHTTPRequestHandler):
 
             if can_recache:
                 cache = cm() 
-                cache.clear_old_pull_requests(CACHE_DIR) 
+                cache.clear_pr_cache(CACHE_DIR) 
     
                 req = rc(config["API_USER"],config["API_KEY"])
                 endpoint = req.build_url(["repositories",config["ORGANIZATION"],config["PROJECT"],"pullrequests"])
                 res = req.get(endpoint)
 
-                cache.save_json_cache(res,file_path)
+                cache.save_cache(res,file_path)
 
                 pull_requests = res["values"]
                 for pr in pull_requests:
                     endpoint = req.build_url(["repositories",config["ORGANIZATION"],config["PROJECT"],"pullrequests",pr["id"]])
                     res = req.get(endpoint)
                     if not res["draft"]:
-                        if not cache.passes_reviews(res, APPROVAL_THRESHOLD): 
+                        if not cache.has_enough_approvals(res, APPROVAL_THRESHOLD): 
                             file_path = f"{CACHE_DIR}/{pr["id"]}.pr.json"
-                            cache.save_json_cache(res,file_path)
+                            cache.save_cache(res,file_path)
 
         if self.path == "/server-content":
            return 
@@ -74,7 +74,7 @@ def run(server_class=HTTPServer, handler_class=ServerController, port=8000):
     httpd.serve_forever()
 
 
-# run() 
+# run()
 
 cache = cm()
 data = cache.load_cache(f"{CACHE_DIR}/6882.pr.json")
@@ -102,12 +102,23 @@ if "reviewers" in data and isinstance(data["reviewers"], list):
         for r in data["reviewers"]
     ]
 
+data.pop("destination", None)
+data.pop("source", None)
+data.pop("reason", None)
+data.pop("type", None)
+data.pop("rendered", None)
+data.pop("state", None)
+data.pop("draft", None)
+data.pop("merge_commit", None)
+data.pop("closed_by", None)
+data.pop("close_source_branch", None)
+data["author"] = data["author"]["display_name"]
+
 
 cache.save_json_cache(data,f"{CACHE_DIR}/Testing.pr.json")
 
 
 print(json.dumps(data, indent=4))
-
 
 
 
