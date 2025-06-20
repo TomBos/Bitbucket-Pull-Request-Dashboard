@@ -14,8 +14,11 @@ import time
 import datetime
 import glob
 
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+CACHE_DIR = os.path.join(BASE_DIR, "cache")
+PUBLIC = os.path.join(BASE_DIR, "public")
+
 APPROVAL_THRESHOLD = 2
-CACHE_DIR = "cache/"
 CACHE_TTL = 3600
 
 def load_env_vars(*required_keys: str):
@@ -33,15 +36,28 @@ config = load_env_vars("API_KEY", "API_USER", "ORGANIZATION", "PROJECT")
 
 class ServerController(BaseHTTPRequestHandler):
     
-    def _send_response(self, response_object: Union[str, bytes], status: int = 200, content_type: str = "application/json") -> None:
+    def _send_response(self, response_object: Union[str, bytes], encode: bool = True, status: int = 200, content_type: str = "application/json") -> None:
         self.send_response(status)
         self.send_header("Content-type", content_type)
         self.end_headers()
-        if isinstance(response_object, str):
-            response_object = response_object.encode()
+        if encode:
+            if isinstance(response_object, str):
+                response_object = response_object.encode()
         self.wfile.write(response_object)
 
     def do_GET(self):
+        if self.path in ["/", "/index", "/index.html", "/index.php"]:
+            path = os.path.join(PUBLIC, "index.html")
+            try:
+                with open(path, "rb") as f:
+                    html_content = f.read()
+                    return self._send_response(html_content, False, 200, "text/html")
+            except FileNotFoundError:
+                return self.send_error(404)
+        
+        return self.send_error(404)
+
+    def do_POST(self):
         if self.path == "/reload-cache":
             pr_overview_path = os.path.join(CACHE_DIR, "pr_overview.json")
             
@@ -105,6 +121,10 @@ class ServerController(BaseHTTPRequestHandler):
             response_json = json.dumps(response_object) + "\n"
 
             return self._send_response(response_json)
+
+        error_message = json.dumps({"error": "endpoint doesnt exist"}) + "\n"
+        return self._send_response(error_message,500)
+
 
 
 def run(server_class=HTTPServer, handler_class=ServerController, port=8000):
