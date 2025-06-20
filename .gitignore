@@ -197,6 +197,8 @@ cython_debug/
 src/cache/*.json
 *.json
 
+# Node Modules
+**/node_modules/
 
 
 
