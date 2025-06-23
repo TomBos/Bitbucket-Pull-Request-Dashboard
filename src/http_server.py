@@ -119,6 +119,9 @@ class ServerController(BaseHTTPRequestHandler):
                     pr_cache_path = os.path.join(CACHE_DIR, f"{pr_id}.pr.json")
                     cache.save_cache(parsed_data, pr_cache_path)
 
+            success_message = json.dumps({"message": "cache successfully reloaded"}) + "\n"
+            return self._send_response(success_message)
+
 
         if self.path == "/tea":
             response = json.dumps({"error": "I'm a teapot 🫖 - I cannot brew coffee"}) + "\n"
