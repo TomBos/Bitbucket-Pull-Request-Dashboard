@@ -332,4 +332,4 @@ public/*
 !public/.gitkeep
 
 # Vite Cache
-src/vite/public/*.pr.json
+src/vite/public/cache/*.pr.json
