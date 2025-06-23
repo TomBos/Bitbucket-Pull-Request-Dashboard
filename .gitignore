@@ -322,7 +322,7 @@ dist
 # === CUSTOM ===
 
 # Json cache
-src/cache/*.json
+cache/*.json
 
 # Node Modules
 **/node_modules/
@@ -332,4 +332,4 @@ public/*
 !public/.gitkeep
 
 # Vite Cache
-src/vite/public/cache/*.pr.json
+vite/public/cache/*.pr.json
