@@ -13,10 +13,11 @@ if [[ ! -d "$PUBLIC_DIR" ]]; then
   mkdir -p "$PUBLIC_DIR"
 fi
 
+rm -r "$PUBLIC_DIR"*
 
-pnpm --prefix vite install
-pnpm --prefix vite build && mv "$VITE_DIR"/dist/* "$PUBLIC_DIR"
+pnpm --prefix vite install && pnpm --prefix vite build
 
+mv -f "$VITE_DIR"/dist/* "$PUBLIC_DIR"
 rm -r "$VITE_DIR/dist"
 
 python3 http_server.py

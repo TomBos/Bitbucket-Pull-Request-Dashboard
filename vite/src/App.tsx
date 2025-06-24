@@ -5,6 +5,17 @@ function App() {
   const [data, setData] = useState(null)
 
   useEffect(() => {
+    const cacheKey = "serveContentCache"
+    const cacheExpiry = 5 * 60 * 1000 // 5 minutes in ms
+
+    const cached = localStorage.getItem(cacheKey)
+    if (cached) {
+      const { timestamp, data } = JSON.parse(cached)
+      if (Date.now() - timestamp < cacheExpiry) {
+        return setData(data)
+      }
+    }
+
     fetch("/api/serve-content")
       .then(async (res) => {
         if (!res.ok) {
@@ -13,8 +24,11 @@ function App() {
         const text = await res.text()
         try {
           const json = JSON.parse(text)
-          console.dir(json)
           setData(json)
+          localStorage.setItem(
+            cacheKey,
+            JSON.stringify({ timestamp: Date.now(), data: json })
+          )
         } catch (e) {
           console.error("JSON parse error:", e, "Response text:", text)
         }
