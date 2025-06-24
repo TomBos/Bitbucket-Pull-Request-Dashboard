@@ -47,7 +47,7 @@ export function AccordionElement({ entries }: AccordionElementProps) {
           <AccordionContent className="flex flex-col gap-4">
             <div
               className="prose max-w-none"
-              dangerouslySetInnerHTML={{ __html: entry.summary.html }}
+              dangerouslySetInnerHTML={{ __html: entry.summary.html || ""}}
             />
             <div className="flex flex-col gap-2">
               <p className="font-semibold text-muted-foreground text-xs uppercase">Reviewers</p>

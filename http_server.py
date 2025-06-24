@@ -68,6 +68,15 @@ class ServerController(BaseHTTPRequestHandler):
             except FileNotFoundError:
                 return self.send_error(404)
 
+        if self.path == "/serve-content":
+            response_object = []
+            for file in glob.glob(os.path.join(CACHE_DIR, "*.pr.json")):
+                cache = CacheManager()
+                data = cache.load_cache(file)
+                response_object.append(data)
+            response_json = json.dumps(response_object) + "\n"
+            return self._send_response(response_json)
+
         return self.send_error(404)
 
     def do_POST(self):
@@ -126,17 +135,6 @@ class ServerController(BaseHTTPRequestHandler):
         if self.path == "/tea":
             response = json.dumps({"error": "I'm a teapot 🫖 - I cannot brew coffee"}) + "\n"
             return self._send_response(response)
-
-
-        if self.path == "/serve-content":
-            response_object = []
-            for file in glob.glob(os.path.join(CACHE_DIR, "*.json")):
-                cache = CacheManager()
-                data = cache.load_cache(file)
-                response_object.append(data)
-            response_json = json.dumps(response_object) + "\n"
-
-            return self._send_response(response_json)
 
         error_message = json.dumps({"error": "endpoint doesnt exist"}) + "\n"
         return self._send_response(error_message,500)
