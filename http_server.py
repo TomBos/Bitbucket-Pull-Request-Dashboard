@@ -23,6 +23,10 @@ PUBLIC = os.path.join(BASE_DIR, "public")
 APPROVAL_THRESHOLD = 2
 CACHE_TTL = 3600
 
+SERVER_HOST = "0.0.0.0"
+SERVER_PORT = 8000
+
+
 def load_env_vars(*required_keys: str):
     load_dotenv()
     env = {}
@@ -141,11 +145,11 @@ class ServerController(BaseHTTPRequestHandler):
 
 
 
-def run(server_class=HTTPServer, handler_class=ServerController, port=8000):
-    server_address = ('', port)
+def run(server_class=HTTPServer, handler_class=ServerController, host='127.0.0.1', port=8000):
+    server_address = (host,port)
     httpd = server_class(server_address, handler_class)
-    print(f"Server running on port {port}")
+    print(f"Server running on: http://{host}:{port}")
     httpd.serve_forever()
 
 
-run()
+run(host=SERVER_HOST, port=SERVER_PORT)

@@ -332,3 +332,6 @@ public/*
 
 # Vite Cache
 vite/public/cache/*.pr.json
+
+# Nginx Conf
+deploy/bitbucket-pull-request-dashboard.conf

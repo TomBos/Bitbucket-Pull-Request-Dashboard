@@ -1,11 +1,21 @@
 #!/usr/bin/env bash
 
 SCRIPT_DIR="$(dirname "$(readlink -f "$0")")"
-VITE_DIR="$SRC_DIR/vite"
+VITE_DIR="$SCRIPT_DIR/vite"
+PUBLIC_DIR="$SCRIPT_DIR/public/"
+
+
+if [[ ! -d "$VITE_DIR" ]]; then
+  mkdir -p "$VITE_DIR"
+fi
+
+if [[ ! -d "$PUBLIC_DIR" ]]; then
+  mkdir -p "$PUBLIC_DIR"
+fi
 
 
 pnpm --prefix vite install
-pnpm --prefix vite build && mv "$VITE_DIR"/dist/* "$SRC_DIR/public/"
+pnpm --prefix vite build && mv "$VITE_DIR"/dist/* "$PUBLIC_DIR"
 
 rm -r "$VITE_DIR/dist"
 
