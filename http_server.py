@@ -52,26 +52,6 @@ class ServerController(BaseHTTPRequestHandler):
         self.wfile.write(response_object)
 
     def do_GET(self):
-        if self.path in ["/", "/index", "/index.html", "/index.php"]:
-            file_path = os.path.join(PUBLIC, "index.html")
-            try:
-                with open(file_path, "rb") as f:
-                    html_content = f.read()
-                    return self._send_response(html_content, False, 200, "text/html")
-            except FileNotFoundError:
-                return self.send_error(404)
-        
-        if self.path.startswith("/assets/"):
-            relative_path = unquote(self.path.lstrip('/'))
-            file_path = os.path.join(PUBLIC, relative_path)
-            try:
-                with open(file_path, "rb") as f:
-                    content = f.read()
-                    content_type = mimetypes.guess_type(file_path)[0] or "application/octet-stream"
-                    return self._send_response(content, content_type=content_type)
-            except FileNotFoundError:
-                return self.send_error(404)
-
         if self.path == "/serve-content":
             response_object = []
             for file in glob.glob(os.path.join(CACHE_DIR, "*.pr.json")):
