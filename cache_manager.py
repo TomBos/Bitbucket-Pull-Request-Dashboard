@@ -38,14 +38,28 @@ class CacheManager:
 
 
     def trim_cache_object(self, data: Dict[str, Any]) -> Dict[str, Any]:
-        if isinstance(data.get("summary"), dict):
-            html_content = data["summary"].get("html")
-            data["summary"] = {"html": html_content} if html_content else {}
+        keys_to_remove = [
+            "destination", "source", "reason", "type", "rendered", "links",
+            "state", "draft", "merge_commit", "closed_by", "close_source_branch"
+        ]
 
-        participants = self.extract_participants(data)
-        reviewers = self.extract_reviewers(data)
+        for key in keys_to_remove: 
+            data.pop(key, None)
 
-        data["author"] = data["author"]["display_name"]
+        summary = self.normalize_summary(data)
+        
+        """
+        participants = self.normalize_participants(data)
+        reviewers = self.normalize_reviewers(data)
+        """
+        
+        author = data.get("author")
+        if isinstance(author, dict):
+            display_name = author.get("display_name")
+        else:
+            display_name = author
+
+        """
         reviewers_dict = {r["display_name"]: r for r in reviewers if r["display_name"]}
         
         filtered_participants = []
@@ -55,18 +69,16 @@ class CacheManager:
                 reviewers_dict[name]["approved"] = p.get("approved", False)
             else:
                 filtered_participants.append(p)
+        """
 
-        data["participants"] = filtered_participants
-        data["reviewers"] = list(reviewers_dict.values())
+        # data["participants"] = participants
+        # data["reviewers"] = reviewers
 
-        for key in [
-            "destination", "source", "reason", "type", "rendered", "links",
-            "state", "draft", "merge_commit", "closed_by", "close_source_branch"
-        ]: data.pop(key, None)
+        data["summary"] = summary
 
         return data
 
-    def extract_participants(self, data: Dict[str, Any]) -> List[Dict[str, Any]]:
+    def normalize_participants(self, data: Dict[str, Any]) -> List[Dict[str, Any]]:
         participants = []
         for p in data.get("participants", []):
             user = p.get("user", {})
@@ -89,7 +101,7 @@ class CacheManager:
 
         return participants
 
-    def extract_reviewers(self, data: Dict[str, Any]) -> List[Dict[str, Any]]:
+    def normalize_reviewers(self, data: Dict[str, Any]) -> List[Dict[str, Any]]:
         reviewers = []
         for r in data.get("reviewers", []):
             display_name = r.get("display_name")
@@ -108,6 +120,13 @@ class CacheManager:
                 })
 
         return reviewers
+
+    def normalize_summary(self, data: dict) -> dict:
+        summary = data.get("summary")
+        if isinstance(summary, dict):
+            html_content = summary.get("html")
+            return html_content
+        return {}
 
 
 
