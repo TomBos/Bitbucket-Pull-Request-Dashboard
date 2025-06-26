@@ -47,19 +47,11 @@ class CacheManager:
             data.pop(key, None)
 
         summary = self.normalize_summary(data["summary"])
-        participants = self.normalize_participants(data["participants"]) 
+        participants = self.normalize_participants(data["participants"])
+        author = self.normalize_author(data["author"], participants)
         
         """
         reviewers = self.normalize_reviewers(data)
-        """
-        
-        author = data.get("author")
-        if isinstance(author, dict):
-            display_name = author.get("display_name")
-        else:
-            display_name = author
-
-        """
         reviewers_dict = {r["display_name"]: r for r in reviewers if r["display_name"]}
         
         filtered_participants = []
@@ -69,16 +61,18 @@ class CacheManager:
                 reviewers_dict[name]["approved"] = p.get("approved", False)
             else:
                 filtered_participants.append(p)
+        
+        
+        data["reviewers"] = reviewers
         """
 
-        # data["participants"] = participants
-        # data["reviewers"] = reviewers
 
-
+        data["author"] = author
         data["summary"] = summary
         data["participants"] = participants
 
         return data
+
 
     def normalize_participants(self, data: Dict[str, Any]) -> List[Dict[str, Any]]:
         participants = []
@@ -103,6 +97,7 @@ class CacheManager:
 
         return participants
 
+
     def normalize_reviewers(self, data: Dict[str, Any]) -> List[Dict[str, Any]]:
         reviewers = []
         for r in data.get("reviewers", []):
@@ -123,11 +118,21 @@ class CacheManager:
 
         return reviewers
 
-    def normalize_summary(self, data: dict) -> dict:
+
+    def normalize_summary(self, data: Dict[str, Any]) -> dict:
         if isinstance(data, dict):
             return data.get("html")
         return {}
 
+
+    def normalize_author(self, author_dict: Dict[str, Any], participant_dict: List[Dict[str, Any]]) -> dict:
+        author_name = author_dict.get("display_name")
+        for i, participant in enumerate(participant_dict):
+            participant_name = participant.get("display_name")
+            if participant_name == author_name:
+                participant_dict.pop(i)
+                return participant
+        return author_dict
 
 
 
