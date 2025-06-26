@@ -66,7 +66,7 @@ class CacheManager:
 
         return data
 
-    def extract_participants(data: Dict[str, Any]) -> List[Dict[str, Any]]:
+    def extract_participants(self, data: Dict[str, Any]) -> List[Dict[str, Any]]:
         participants = []
         for p in data.get("participants", []):
             user = p.get("user", {})
@@ -89,7 +89,7 @@ class CacheManager:
 
         return participants
 
-    def extract_reviewers(data: Dict[str, Any]) -> List[Dict[str, Any]]:
+    def extract_reviewers(self, data: Dict[str, Any]) -> List[Dict[str, Any]]:
         reviewers = []
         for r in data.get("reviewers", []):
             display_name = r.get("display_name")

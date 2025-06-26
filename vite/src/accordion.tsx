@@ -55,10 +55,18 @@ export function AccordionElement({ entries }: AccordionElementProps) {
               dangerouslySetInnerHTML={{ __html: entry.summary.html || ""}}
             />
             <div className="flex flex-col gap-2">
-              <p className="font-semibold text-muted-foreground text-xs uppercase">Reviewers</p>
-              {entry.reviewers.map(renderAvatar)}
-              <p className="font-semibold text-muted-foreground text-xs uppercase mt-4">Participants</p>
-              {entry.participants.map(renderAvatar)}
+              {entry.reviewers?.length > 0 && (
+                <>
+                  <p className="font-semibold text-muted-foreground text-xs uppercase">Reviewers</p>
+                  {entry.reviewers.map(renderAvatar)}
+                </>
+              )}
+              {entry.participants?.length > 0 && (
+                <>
+                  <p className="font-semibold text-muted-foreground text-xs uppercase mt-4">Participants</p>
+                  {entry.participants.map(renderAvatar)}
+                </>
+              )}
             </div>
           </AccordionContent>
         </AccordionItem>
