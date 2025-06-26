@@ -46,10 +46,10 @@ class CacheManager:
         for key in keys_to_remove: 
             data.pop(key, None)
 
-        summary = self.normalize_summary(data)
+        summary = self.normalize_summary(data["summary"])
+        participants = self.normalize_participants(data["participants"]) 
         
         """
-        participants = self.normalize_participants(data)
         reviewers = self.normalize_reviewers(data)
         """
         
@@ -74,13 +74,15 @@ class CacheManager:
         # data["participants"] = participants
         # data["reviewers"] = reviewers
 
+
         data["summary"] = summary
+        data["participants"] = participants
 
         return data
 
     def normalize_participants(self, data: Dict[str, Any]) -> List[Dict[str, Any]]:
         participants = []
-        for p in data.get("participants", []):
+        for p in data:
             user = p.get("user", {})
             display_name = user.get("display_name")
             approved = p.get("approved")
@@ -122,10 +124,8 @@ class CacheManager:
         return reviewers
 
     def normalize_summary(self, data: dict) -> dict:
-        summary = data.get("summary")
-        if isinstance(summary, dict):
-            html_content = summary.get("html")
-            return html_content
+        if isinstance(data, dict):
+            return data.get("html")
         return {}
 
 
