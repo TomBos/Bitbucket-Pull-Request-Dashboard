@@ -3,7 +3,7 @@
 import os
 import glob
 import json
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional
 
 class CacheManager:
     def save_cache(self, data: Any, file_path: str) -> None:
@@ -42,33 +42,72 @@ class CacheManager:
             html_content = data["summary"].get("html")
             data["summary"] = {"html": html_content} if html_content else {}
 
-        if isinstance(data.get("participants"), list):
-            data["participants"] = [
-                {
-                    "display_name": p.get("user", {}).get("display_name"),
-                    "approved": p.get("approved"),
-                    "avatar": p.get("user", {}).get("links", {}).get("avatar", {}).get("href", "")
-                }
-                for p in data["participants"]
-            ]
+        participants = self.extract_participants(data)
+        reviewers = self.extract_reviewers(data)
 
-        if isinstance(data.get("reviewers"), list):
-            data["reviewers"] = [
-                {
-                    "display_name": r.get("display_name", {}),
-                    "avatar": r.get("links", {}).get("avatar", {}).get("href", "")
-                }
-                for r in data["reviewers"]
-            ]
+        data["author"] = data["author"]["display_name"]
+        reviewers_dict = {r["display_name"]: r for r in reviewers if r["display_name"]}
+        
+        filtered_participants = []
+        for p in participants:
+            name = p["display_name"]
+            if name in reviewers_dict:
+                reviewers_dict[name]["approved"] = p.get("approved", False)
+            else:
+                filtered_participants.append(p)
+
+        data["participants"] = filtered_participants
+        data["reviewers"] = list(reviewers_dict.values())
 
         for key in [
             "destination", "source", "reason", "type", "rendered", "links",
             "state", "draft", "merge_commit", "closed_by", "close_source_branch"
         ]: data.pop(key, None)
 
-        data["author"] = data["author"]["display_name"]
         return data
 
+    def extract_participants(data: Dict[str, Any]) -> List[Dict[str, Any]]:
+        participants = []
+        for p in data.get("participants", []):
+            user = p.get("user", {})
+            display_name = user.get("display_name")
+            approved = p.get("approved")
+            avatar = ""
+
+            links = user.get("links")
+            if links:
+                avatar_dict = links.get("avatar")
+                if avatar_dict:
+                    avatar = avatar_dict.get("href", "")
+
+            if display_name:
+                participants.append({
+                    "display_name": display_name,
+                    "approved": approved,
+                    "avatar": avatar,
+                })
+
+        return participants
+
+    def extract_reviewers(data: Dict[str, Any]) -> List[Dict[str, Any]]:
+        reviewers = []
+        for r in data.get("reviewers", []):
+            display_name = r.get("display_name")
+            avatar = ""
+
+            links = r.get("links")
+            if links:
+                avatar_dict = links.get("avatar")
+                if avatar_dict:
+                    avatar = avatar_dict.get("href", "")
+
+            if display_name:
+                reviewers.append({
+                    "display_name": display_name,
+                    "avatar": avatar,
+                })
+
+        return reviewers
 
 
 

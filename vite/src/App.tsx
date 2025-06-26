@@ -6,14 +6,15 @@ function App() {
 
   useEffect(() => {
     const cacheKey = "serveContentCache"
-    const cacheExpiry = 5 * 60 * 1000 // 5 minutes in ms
+    const cacheExpiry = 60 * 60 * 1000 // 1 hour in ms
 
     const cached = localStorage.getItem(cacheKey)
     if (cached) {
       const { timestamp, data } = JSON.parse(cached)
       if (Date.now() - timestamp < cacheExpiry) {
-        return setData(data)
-      }
+      	setData(data)
+     	  return 
+	    }
     }
 
     fetch("/api/serve-content")
