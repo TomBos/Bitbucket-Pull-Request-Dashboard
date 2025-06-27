@@ -3,6 +3,7 @@ import express, { Request, response, Response } from "express";
 import axios from "axios";
 import dotenv from "dotenv";
 import fs from "fs/promises";
+import * as fsSync from 'fs';
 import path from "path";
 
 dotenv.config();
@@ -12,7 +13,7 @@ const router = express.Router();
 
 
 // Interfaces:
-interface BitbucketResponse {
+interface BitbucketMainResponse {
   values: PullRequest[];
   pagelen: number;
   size: number;
@@ -55,7 +56,7 @@ interface ModificationCheck {
 }
 
 // Helper Functions
-async function get(endpoint: string): Promise<BitbucketResponse> {
+async function getCache(endpoint: string): Promise<BitbucketMainResponse | any> {
   const username = process.env.API_USER;
   const apiKey = process.env.API_KEY;
 
@@ -110,27 +111,27 @@ function getCacheFolder(): string {
   return path.join(rootDir, "cache");
 }
 
-async function wasModifiedWithinLastHour(filePath: string): Promise<ModificationCheck> {
+function wasModifiedWithinLastHour(filePath: string): ModificationCheck {
   try {
-    const stats = await fs.stat(filePath);
+    const stats = fsSync.statSync(filePath);
     const lastModified = stats.mtime;
     const oneHourAgo = Date.now() - 3600 * 1000;
     return {
       was_modified: lastModified.getTime() < oneHourAgo,
-      last_modified: lastModified.getTime()
+      last_modified: lastModified.getTime(),
     };
   } catch (err) {
     console.error("Error reading file stats:", err);
     return {
       was_modified: false,
-      last_modified: 0
+      last_modified: 0,
     };
   }
 }
 
-async function fileExists(filePath: string): Promise<boolean> {
+function fileExists(filePath: string): boolean {
   try {
-    await fs.access(filePath);
+    fsSync.accessSync(filePath);
     return true;
   } catch {
     return false;
@@ -140,8 +141,8 @@ async function fileExists(filePath: string): Promise<boolean> {
 // Routes
 router.post("/reload-cache", async (req: Request, res: Response<{ success: boolean; message: string }>): Promise<any> => {
   const masterCacheFile = path.join(getCacheFolder(), "pullRequestIds.json");
-  if (await fileExists(masterCacheFile)) {
-    const modificationObj = await wasModifiedWithinLastHour(masterCacheFile);
+  if (fileExists(masterCacheFile)) {
+    const modificationObj = wasModifiedWithinLastHour(masterCacheFile);
     if (modificationObj.was_modified) {
       return res.status(200).json({ success: true, message: "Cache was updated withing last hour" });    
     }
@@ -156,14 +157,20 @@ router.post("/reload-cache", async (req: Request, res: Response<{ success: boole
 
   try {
     const endpoint: string = buildUrl("repositories", organization, project, "pullrequests");
-    const data: BitbucketResponse = await get(endpoint);
+    const data: BitbucketMainResponse = await getCache(endpoint);
     const pullRequestIds = data.values.map((pr) => pr.id);
     await saveJSON(pullRequestIds, masterCacheFile);
 
-    pullRequestIds.forEach(id => {
-      const endpoint: string = buildUrl("repositories", organization, project, "pullrequests", id.toString());
-      console.log(endpoint);
-    });
+    await Promise.all(
+      pullRequestIds.map(async (id) => {
+        const endpoint = buildUrl("repositories", organization, project, "pullrequests", id.toString());
+        const data: any = await getCache(endpoint);
+        
+        const cacheFile = path.join(getCacheFolder(), `${id}.pr.json`);
+        await saveJSON(data, cacheFile);
+      })
+    );
+
 
     return res.status(200).json({ success: true, message: "data" });
   } catch (error) {
