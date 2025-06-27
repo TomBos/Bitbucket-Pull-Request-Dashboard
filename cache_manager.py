@@ -3,7 +3,7 @@
 import os
 import glob
 import json
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Tuple, Optional
 
 class CacheManager:
     def save_cache(self, data: Any, file_path: str) -> None:
@@ -49,27 +49,13 @@ class CacheManager:
         summary = self.normalize_summary(data["summary"])
         participants = self.normalize_participants(data["participants"])
         author = self.normalize_author(data["author"], participants)
-        
-        """
-        reviewers = self.normalize_reviewers(data)
-        reviewers_dict = {r["display_name"]: r for r in reviewers if r["display_name"]}
-        
-        filtered_participants = []
-        for p in participants:
-            name = p["display_name"]
-            if name in reviewers_dict:
-                reviewers_dict[name]["approved"] = p.get("approved", False)
-            else:
-                filtered_participants.append(p)
-        
-        
-        data["reviewers"] = reviewers
-        """
-
+        reviewers = self.normalize_reviewers(data["reviewers"])
+        [filtred_participants, filtred_reviewers] = self.deduplicate_participants(participants, reviewers)
 
         data["author"] = author
         data["summary"] = summary
-        data["participants"] = participants
+        data["participants"] = filtred_participants
+        data["reviewers"] = filtred_reviewers
 
         return data
 
@@ -100,7 +86,7 @@ class CacheManager:
 
     def normalize_reviewers(self, data: Dict[str, Any]) -> List[Dict[str, Any]]:
         reviewers = []
-        for r in data.get("reviewers", []):
+        for r in data:
             display_name = r.get("display_name")
             avatar = ""
 
@@ -127,12 +113,35 @@ class CacheManager:
 
     def normalize_author(self, author_dict: Dict[str, Any], participant_dict: List[Dict[str, Any]]) -> dict:
         author_name = author_dict.get("display_name")
-        for i, participant in enumerate(participant_dict):
-            participant_name = participant.get("display_name")
-            if participant_name == author_name:
-                participant_dict.pop(i)
+        for participant in participant_dict:
+            if participant.get("display_name") == author_name:
                 return participant
-        return author_dict
+        raise ValueError(f"Author '{author_name}' not found in participants")
 
+
+    
+    def deduplicate_participants(self, participant_list: List[Dict[str, Any]], reviewers_list: List[Dict[str, Any]]) -> Tuple[List[Dict[str, Any]], List[Dict[str, Any]]]:
+        deduped_participants = []
+        deduped_reviewers = []
+
+        for p in participant_list:
+            found = False
+            for r in reviewers_list:
+                if r.get("display_name") == p.get("display_name"):
+                    found = True
+                    break
+
+            if found:
+                already_in_reviewers = False
+                for r in deduped_reviewers:
+                    if r.get("display_name") == p.get("display_name"):
+                        already_in_reviewers = True
+                        break
+                if not already_in_reviewers:
+                    deduped_reviewers.append(p)
+            else:
+                deduped_participants.append(p)
+
+        return deduped_participants, deduped_reviewers
 
 

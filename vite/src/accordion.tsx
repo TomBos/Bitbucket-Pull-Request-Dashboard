@@ -9,7 +9,10 @@ type Person = {
 type Entry = {
   id: number
   title: string
-  author: string,
+  author: {
+    display_name: string,
+    avatar: string
+  }
   summary: {
     html: string
   }
@@ -48,7 +51,7 @@ export function AccordionElement({ entries }: AccordionElementProps) {
           <AccordionContent className="flex flex-col gap-4">
             <div className="flex flex-col gap-2">
               <p className="font-semibold text-muted-foreground text-xs uppercase">Author</p>
-              {entry.author}
+              {entry.author.display_name}
             </div>
             <div
               className="prose max-w-none"
