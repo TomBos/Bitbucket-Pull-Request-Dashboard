@@ -97,10 +97,10 @@ function buildUrl(...params: string[]): string {
   return parts.join("/");
 }
 
-async function savePullRequestIds(ids: number[], filePath: string): Promise<void> {
+async function saveJSON(data: any, filePath: string): Promise<void> {
   await fs.writeFile(
     filePath,
-    JSON.stringify({ ids }, null, 2),
+    JSON.stringify({ data }, null, 2),
     "utf-8"
   );
 }
@@ -128,12 +128,23 @@ async function wasModifiedWithinLastHour(filePath: string): Promise<Modification
   }
 }
 
+async function fileExists(filePath: string): Promise<boolean> {
+  try {
+    await fs.access(filePath);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 // Routes
 router.post("/reload-cache", async (req: Request, res: Response<{ success: boolean; message: string }>): Promise<any> => {
-  const masterCacheFile = path.join(getCacheFolder(), "pullRequestIds.json"); 
-  const modificationObj = await wasModifiedWithinLastHour(masterCacheFile);
-  if (modificationObj.was_modified) {
-    return res.status(200).json({ success: true, message: "Cache was updated withing last hour" });    
+  const masterCacheFile = path.join(getCacheFolder(), "pullRequestIds.json");
+  if (await fileExists(masterCacheFile)) {
+    const modificationObj = await wasModifiedWithinLastHour(masterCacheFile);
+    if (modificationObj.was_modified) {
+      return res.status(200).json({ success: true, message: "Cache was updated withing last hour" });    
+    }
   }
   
   const project = process.env.PROJECT;
@@ -147,8 +158,12 @@ router.post("/reload-cache", async (req: Request, res: Response<{ success: boole
     const endpoint: string = buildUrl("repositories", organization, project, "pullrequests");
     const data: BitbucketResponse = await get(endpoint);
     const pullRequestIds = data.values.map((pr) => pr.id);
-    await savePullRequestIds(pullRequestIds, masterCacheFile);
+    await saveJSON(pullRequestIds, masterCacheFile);
 
+    pullRequestIds.forEach(id => {
+      const endpoint: string = buildUrl("repositories", organization, project, "pullrequests", id.toString());
+      console.log(endpoint);
+    });
 
     return res.status(200).json({ success: true, message: "data" });
   } catch (error) {
