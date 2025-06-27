@@ -54,9 +54,7 @@ interface ModificationCheck {
   last_modified: Number;
 }
 
-
-
-
+// Helper Functions
 async function get(endpoint: string): Promise<BitbucketResponse> {
   const username = process.env.API_USER;
   const apiKey = process.env.API_KEY;
@@ -112,7 +110,6 @@ function getCacheFolder(): string {
   return path.join(rootDir, "cache");
 }
 
-
 async function wasModifiedWithinLastHour(filePath: string): Promise<ModificationCheck> {
   try {
     const stats = await fs.stat(filePath);
@@ -131,11 +128,12 @@ async function wasModifiedWithinLastHour(filePath: string): Promise<Modification
   }
 }
 
-router.post("/reload-cache", async (req: Request, res: Response<{ success: boolean; message: string }>): Promise<void> => {
+// Routes
+router.post("/reload-cache", async (req: Request, res: Response<{ success: boolean; message: string }>): Promise<any> => {
   const masterCacheFile = path.join(getCacheFolder(), "pullRequestIds.json"); 
   const modificationObj = await wasModifiedWithinLastHour(masterCacheFile);
   if (modificationObj.was_modified) {
-    res.status(200).json({ success: true, message: "Cache was updated withing last hour" });    
+    return res.status(200).json({ success: true, message: "Cache was updated withing last hour" });    
   }
   
   const project = process.env.PROJECT;
@@ -148,14 +146,14 @@ router.post("/reload-cache", async (req: Request, res: Response<{ success: boole
   try {
     const endpoint: string = buildUrl("repositories", organization, project, "pullrequests");
     const data: BitbucketResponse = await get(endpoint);
-    const pullRequestIds = data.values.map((pr) => pr.id);  
+    const pullRequestIds = data.values.map((pr) => pr.id);
     await savePullRequestIds(pullRequestIds, masterCacheFile);
-    
 
-    res.status(200).json({ success: true, message: "data" });
+
+    return res.status(200).json({ success: true, message: "data" });
   } catch (error) {
-    console.log(error)
-    res.status(500).json({ success: false, message: "Failed to fetch pull requests" });
+    console.log(error);
+    return res.status(500).json({ success: false, message: "Failed to fetch pull requests" });
   }
 });
 
